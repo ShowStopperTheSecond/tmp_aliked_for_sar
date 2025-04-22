@@ -148,7 +148,7 @@ class ALIKED(nn.Module):
         # ================================== score head
         score_map = torch.sigmoid(self.score_head(x1234))
         feature_map = torch.nn.functional.normalize(x1234, p=2, dim=1)
-        reliability = torch.sigmoid(self.reliability(x1234),p=2, dim=1)
+        reliability = torch.sigmoid(self.reliability(x1234))
         # Unpads images
         feature_map = padder.unpad(feature_map)
         score_map = padder.unpad(score_map)
