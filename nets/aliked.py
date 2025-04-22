@@ -155,7 +155,15 @@ class ALIKED(nn.Module):
 
         return feature_map, score_map, reliability
 
-    def forward(self, image):
+    def forward(self, imgs, **kw):
+        res = [self.forward_one(img) for img in imgs]
+        # merge all dictionaries into one
+        res = {k:[r[k] for r in res if k in r] for k in {k for r in res for k in r}}
+        return dict(res, imgs=imgs, **kw)
+
+
+
+    def forward_one(self, image):
         torch.cuda.synchronize()
         # t0 = time.time() 
         feature_map, score_map, reliability = self.extract_dense_map(image)
