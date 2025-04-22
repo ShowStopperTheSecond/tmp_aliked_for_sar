@@ -116,6 +116,14 @@ class ALIKED(nn.Module):
             else:
                 raise FileNotFoundError(f'cannot find pretrained model: {pretrained_path}')   
 
+    def softmax(self, ux):
+        if ux.shape[1] == 1:
+            x = F.softplus(ux)
+            return x / (1 + x)  # for sure in [0,1], much less plateaus than softmax
+        elif ux.shape[1] == 2:
+            return F.softmax(ux, dim=1)[:,1:2]
+
+
     def normalize(self, x, ureliability, urepeatability):
         return dict(descriptors = F.normalize(x, p=2, dim=1),
                     repeatability = self.softmax( urepeatability ),
