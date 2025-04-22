@@ -160,7 +160,8 @@ class ALIKED(nn.Module):
         # Unpads images
         feature_map = padder.unpad(feature_map)
         score_map = padder.unpad(score_map)
-
+        reliability = padder.unpad(reliability)
+        
         return feature_map, score_map, reliability
 
     def forward(self, imgs, **kw):
