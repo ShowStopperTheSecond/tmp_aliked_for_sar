@@ -40,13 +40,14 @@ ALIKED_CFGS = {'aliked-t16':{'c1': 8,
                              'dim': 128,
                              'K': 3,
                              'M': 32},
-            'aliked-n16_multiple_desc':{'c1': 16,
+
+                'aliked-n32_long_desc':{'c1': 16,
                              'c2': 32,
                              'c3': 64,
                              'c4': 128,
-                             'dim': 128,
+                             'dim': 2*128,
                              'K': 3,
-                             'M': 16},
+                             'M': 32},
                              }
 
             
@@ -54,7 +55,7 @@ class ALIKED(nn.Module):
 
     def __init__(
             self,
-            model_name: str = 'aliked-n32',
+            model_name: str = 'aliked-n32_long_desc',
             device: str = 'cuda',
             top_k: int = -1, # -1 for threshold based mode, >0 for top K mode.
             scores_th: float = 0.2,
@@ -161,7 +162,7 @@ class ALIKED(nn.Module):
         feature_map = padder.unpad(feature_map)
         score_map = padder.unpad(score_map)
         reliability = padder.unpad(reliability)
-        
+
         return feature_map, score_map, reliability
 
     def forward(self, imgs, **kw):
