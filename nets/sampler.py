@@ -469,7 +469,7 @@ class NghSampler3 (nn.Module):
         b2 = b1
         xy2 = (aflow[b1, :, y1, x1] + 0.5).long().t()
         mask = (0 <= xy2[0]) * (0 <= xy2[1]) * (xy2[0] < W) * (xy2[1] < H)
-        mask = mask.view(shape)
+        mask = mask.view(-1)
         
         def clamp(xy):
             torch.clamp(xy[0], 0, W-1, out=xy[0])
@@ -481,6 +481,16 @@ class NghSampler3 (nn.Module):
         print(f'mask: {mask.shape}, xy2: {xy2.shape}')
         xy2p = xy2
         feat2 = feat2[b2, :, xy2p[1], xy2p[0]]
+
+
+        feat1 = feat1[mask]
+        feat2 = feat2[mask]
+        
+
+        print(torch.any(torch.isnan(feat1)))
+        print(torch.any(torch.isnan(feat2)))
+
+
 
         return feat1, feat2
 
