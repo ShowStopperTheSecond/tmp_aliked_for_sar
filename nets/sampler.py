@@ -484,15 +484,15 @@ class NghSampler3 (nn.Module):
         # xy2p = xy2
         feat2 = feat2[b2, :, xy2p[1], xy2p[0]]
 
-        print(f'mask: {mask.shape}, xy2: {xy2.shape}')
-        print(feat1.shape, feat2.shape)
-        print(mask)
+        # print(f'mask: {mask.shape}, xy2: {xy2.shape}')
+        # print(feat1.shape, feat2.shape)
+        # print(mask)
         feat1 = feat1[mask]
         feat2 = feat2[mask]
 
 
-        print(torch.any(torch.isnan(feat1)))
-        print(torch.any(torch.isnan(feat2)))
+        # print(torch.any(torch.isnan(feat1)))
+        # print(torch.any(torch.isnan(feat2)))
 
 
 
