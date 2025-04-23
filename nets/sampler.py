@@ -329,7 +329,8 @@ class NghSampler2 (nn.Module):
 
         # sample features from first image
         feat1 = feat1[b1, :, y1, x1]
-        qconf = conf1[b1, :, y1, x1].view(shape) if confs else None
+        # qconf = conf1[b1, :, y1, x1].view(shape) if confs else None
+        qconf = None
         
         #sample GT from second image
         b2 = b1
