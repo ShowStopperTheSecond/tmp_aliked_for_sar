@@ -63,8 +63,9 @@ class MetricLoss (nn.Module):
         all_labels = torch.cat([labels, labels])
         all_feat = torch.cat([feat1, feat2])
 
-
+        print(all_labels.shape, all_feat.shape)
         loss_value =  loss_fn(all_feat, all_labels)
+        print(loss_value)
        
         return loss_value
 
