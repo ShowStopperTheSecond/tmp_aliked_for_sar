@@ -331,7 +331,7 @@ class NghSampler2 (nn.Module):
         feat1 = feat1[b1, :, y1, x1]
         # qconf = conf1[b1, :, y1, x1].view(shape) if confs else None
         qconf = None
-        
+
         #sample GT from second image
         b2 = b1
         xy2 = (aflow[b1, :, y1, x1] + 0.5).long().t()
@@ -381,6 +381,117 @@ class NghSampler2 (nn.Module):
         gt[:, :pscores.shape[1]] = 1
 
         return scores, gt, mask, qconf
+
+
+
+
+
+
+
+
+
+
+
+
+class NghSampler3 (nn.Module):
+    """ Similar to NghSampler, but doesnt warp the 2nd image.
+    Distance to GT =>  0 ... pos_d ... neg_d ... ngh
+    Pixel label    =>  + + + + + + 0 0 - - - - - - -
+    
+    Subsample on query side: if > 0, regular grid
+                                < 0, random points 
+    In both cases, the number of query points is = W*H/subq**2
+    """
+    def __init__(self, ngh, subq=1, subd=1, pos_d=0, neg_d=2, border=None,
+                       maxpool_pos=True, subd_neg=0):
+        nn.Module.__init__(self)
+        assert 0 <= pos_d < neg_d <= (ngh if ngh else 99)
+        self.ngh = ngh
+        self.pos_d = pos_d
+        self.neg_d = neg_d
+        assert subd <= ngh or ngh == 0
+        assert subq != 0
+        self.sub_q = subq
+        self.sub_d = subd
+        self.sub_d_neg = subd_neg
+        if border is None: border = ngh
+        assert border >= ngh, 'border has to be larger than ngh'
+        self.border = border
+        self.maxpool_pos = maxpool_pos
+        self.precompute_offsets()
+
+    def precompute_offsets(self):
+        pos_d2 = self.pos_d**2
+        neg_d2 = self.neg_d**2
+        rad2 = self.ngh**2
+        rad = (self.ngh//self.sub_d) * self.ngh # make an integer multiple
+        pos = []
+        neg = []
+        for j in range(-rad, rad+1, self.sub_d):
+          for i in range(-rad, rad+1, self.sub_d):
+            d2 = i*i + j*j
+            if d2 <= pos_d2:
+                pos.append( (i,j) )
+            elif neg_d2 <= d2 <= rad2: 
+                neg.append( (i,j) )
+
+        self.register_buffer('pos_offsets', torch.LongTensor(pos).view(-1,2).t())
+        self.register_buffer('neg_offsets', torch.LongTensor(neg).view(-1,2).t())
+
+    def gen_grid(self, step, aflow):
+        B, two, H, W = aflow.shape
+        dev = aflow.device
+        b1 = torch.arange(B, device=dev)
+        if step > 0:
+            # regular grid
+            x1 = torch.arange(self.border, W-self.border, step, device=dev)
+            y1 = torch.arange(self.border, H-self.border, step, device=dev)
+            H1, W1 = len(y1), len(x1)
+            x1 = x1[None,None,:].expand(B,H1,W1).reshape(-1)
+            y1 = y1[None,:,None].expand(B,H1,W1).reshape(-1)
+            b1 = b1[:,None,None].expand(B,H1,W1).reshape(-1)
+            shape = (B, H1, W1)
+        else:
+            # randomly spread
+            n = (H - 2*self.border) * (W - 2*self.border) // step**2
+            x1 = torch.randint(self.border, W-self.border, (n,), device=dev)
+            y1 = torch.randint(self.border, H-self.border, (n,), device=dev)
+            x1 = x1[None,:].expand(B,n).reshape(-1)
+            y1 = y1[None,:].expand(B,n).reshape(-1)
+            b1 = b1[:,None].expand(B,n).reshape(-1)
+            shape = (B, n)
+        return b1, y1, x1, shape
+
+    def forward(self, feats, confs, aflow, **kw):
+        B, two, H, W = aflow.shape
+        assert two == 2
+        feat1, conf1 = feats[0], (confs[0] if confs else None)
+        feat2, conf2 = feats[1], (confs[1] if confs else None)
+        
+        # positions in the first image
+        b1, y1, x1, shape = self.gen_grid(self.sub_q, aflow)
+
+        # sample features from first image
+        feat1 = feat1[b1, :, y1, x1]
+        # qconf = conf1[b1, :, y1, x1].view(shape) if confs else None
+        qconf = None
+
+        #sample GT from second image
+        b2 = b1
+        xy2 = (aflow[b1, :, y1, x1] + 0.5).long().t()
+        mask = (0 <= xy2[0]) * (0 <= xy2[1]) * (xy2[0] < W) * (xy2[1] < H)
+        mask = mask.view(shape)
+        
+        def clamp(xy):
+            torch.clamp(xy[0], 0, W-1, out=xy[0])
+            torch.clamp(xy[1], 0, H-1, out=xy[1])
+            return xy
+        
+        # compute positive scores
+        xy2p = clamp(xy2[:,None,:] + self.pos_offsets[:,:,None])
+        feat2 = feat2[b2, :, xy2p[1], xy2p[0]]
+
+        return feat1, feat2
 
 
 

@@ -6,7 +6,7 @@ import pdb
 import torch.nn as nn
 import torch.nn.functional as F
 
-from nets.ap_loss import APLoss
+# from nets.ap_loss import APLoss
 from pytorch_metric_learning import losses
 
 
@@ -39,7 +39,7 @@ loss_fn = all_losses["FastAPLoss_2019"].to('cuda')
 
 
 
-class PixelAPLoss (nn.Module):
+class MetricLoss (nn.Module):
     """ Computes the pixel-wise AP loss:
         Given two images and ground-truth optical flow, computes the AP per pixel.
         
@@ -49,47 +49,22 @@ class PixelAPLoss (nn.Module):
     """
     def __init__(self, sampler, nq=20):
         nn.Module.__init__(self)
-        self.aploss = APLoss(nq, min=0, max=1, euc=False)
-        self.name = 'pixAP'
+        # self.aploss = APLoss(nq, min=0, max=1, euc=False)
+        self.name = 'Metric Loss'
         self.sampler = sampler
-
-    def loss_from_ap(self, ap, rel):
-        return 1 - ap
 
     def forward(self, descriptors, aflow, **kw):
         # subsample things
-        scores, gt, msk, qconf = self.sampler(descriptors, kw.get('reliability'), aflow)
-        
-        print(f'msk: {msk.shape}, gt: {gt.shape}, scores: {scores.shape}, qconf: {qconf}')
-        
-        # compute pixel-wise AP
-        # n = qconf.numel()
-        n = scores.numel()
-        if n == 0: return 0
-        scores, gt = scores.view(n,-1), gt.view(n,-1)
+        feat1, feat2  = self.sampler(descriptors, kw.get('reliability'), aflow)
 
-        ap = self.aploss(scores, gt).view(msk.shape)
-
-        # pixel_loss = self.loss_from_ap(ap, qconf)
-        
-        loss = pixel_loss[msk].mean()
-        return loss
+        labels = torch.arange(len(feat1))
+        all_labels = torch.cat([labels, labels])
+        all_feat = torch.cat([feat1, feat2])
 
 
-class ReliabilityLoss (PixelAPLoss):
-    """ same than PixelAPLoss, but also train a pixel-wise confidence
-        that this pixel is going to have a good AP.
-    """
-    def __init__(self, sampler, base=0.5, **kw):
-        PixelAPLoss.__init__(self, sampler, **kw)
-        assert 0 <= base < 1
-        self.base = base
-        self.name = 'reliability'
-
-    def loss_from_ap(self, ap, rel):
-        return 1 - ap*rel - (1-rel)*self.base
-
-
+        loss_value =  loss_fn(all_feat, all_labels)
+       
+        return loss_value
 
 
 
