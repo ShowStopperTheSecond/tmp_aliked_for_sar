@@ -128,7 +128,7 @@ class ALIKED(nn.Module):
     def normalize(self, x, ureliability, urepeatability):
         return dict(descriptors = F.normalize(x, p=2, dim=1),
                     repeatability = self.softmax( urepeatability ),
-                    reliability = self.softmax( ureliability ))
+                    reliability = None)
      
     
     def extract_dense_map(self, image):
@@ -183,7 +183,7 @@ class ALIKED(nn.Module):
         # t1 = time.time()        
 
         
-        return self.normalize(feature_map, score_map)
+        return self.normalize(feature_map, score_map, None)
         # return {'keypoints': keypoints,  # B N 2
         #     'descriptors': descriptors,  # B N D
         #     'reliability': reliability,
