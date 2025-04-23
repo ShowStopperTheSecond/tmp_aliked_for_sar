@@ -183,7 +183,7 @@ class ALIKED(nn.Module):
         # t1 = time.time()        
 
         
-        return self.normalize(feature_map, score_map, None)
+        return self.normalize(feature_map, None, score_map)
         # return {'keypoints': keypoints,  # B N 2
         #     'descriptors': descriptors,  # B N D
         #     'reliability': reliability,
