@@ -248,7 +248,6 @@ class FarNearSampler (FullSampler):
                 torch.cat((gt1,    gt2),    dim=1), 
                 msk1, conf1 if confs else None)
 
-
 class NghSampler2 (nn.Module):
     """ Similar to NghSampler, but doesnt warp the 2nd image.
     Distance to GT =>  0 ... pos_d ... neg_d ... ngh
@@ -329,9 +328,8 @@ class NghSampler2 (nn.Module):
 
         # sample features from first image
         feat1 = feat1[b1, :, y1, x1]
-        # qconf = conf1[b1, :, y1, x1].view(shape) if confs else None
-        qconf = None
-
+        qconf = conf1[b1, :, y1, x1].view(shape) if confs else None
+        
         #sample GT from second image
         b2 = b1
         xy2 = (aflow[b1, :, y1, x1] + 0.5).long().t()
@@ -381,15 +379,6 @@ class NghSampler2 (nn.Module):
         gt[:, :pscores.shape[1]] = 1
 
         return scores, gt, mask, qconf
-
-
-
-
-
-
-
-
-
 
 
 
@@ -488,7 +477,7 @@ class NghSampler3 (nn.Module):
             return xy
         
         # compute positive scores
-        xy2p = clamp(xy2[:,None,:] + self.pos_offsets[:,:,None])
+        # xy2p = clamp(xy2[:,None,:] + self.pos_offsets[:,:,None])
         feat2 = feat2[b2, :, xy2p[1], xy2p[0]]
 
         return feat1, feat2
