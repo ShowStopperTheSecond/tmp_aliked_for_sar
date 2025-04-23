@@ -60,13 +60,14 @@ class PixelAPLoss (nn.Module):
         # subsample things
         scores, gt, msk, qconf = self.sampler(descriptors, kw.get('reliability'), aflow)
         
+        print(f'msk: {msk.shape}, gt: {gt.shape}, scores: {scores.shape}, qconf: {qconf}')
+        
         # compute pixel-wise AP
         # n = qconf.numel()
         n = scores.numel()
         if n == 0: return 0
         scores, gt = scores.view(n,-1), gt.view(n,-1)
-        print(f'ap: {ap.shape}, gt: {gt.shape}, scores: {scores.shape}')
-        
+
         ap = self.aploss(scores, gt).view(msk.shape)
 
         # pixel_loss = self.loss_from_ap(ap, qconf)
