@@ -478,6 +478,7 @@ class NghSampler3 (nn.Module):
         
         # compute positive scores
         # xy2p = clamp(xy2[:,None,:] + self.pos_offsets[:,:,None])
+        print(f'mask: {mask.shape}, xy2: {xy2.shape}')
         xy2p = xy2
         feat2 = feat2[b2, :, xy2p[1], xy2p[0]]
 
