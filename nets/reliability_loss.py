@@ -48,23 +48,28 @@ class MetricLoss (nn.Module):
         feat2:  (B, C, H, W)   pixel-wise features extracted from img2
         aflow:  (B, 2, H, W)   absolute flow: aflow[...,y1,x1] = x2,y2
     """
-    def __init__(self, sampler, nq=20):
+    def __init__(self, sampler, loss_name):
         nn.Module.__init__(self)
         # self.aploss = APLoss(nq, min=0, max=1, euc=False)
         self.name = 'Metric Loss'
         self.sampler = sampler
+        self.loss_fn = loss_fn[loss_name]
 
     def forward(self, descriptors, aflow, **kw):
         # subsample things
         feat1, feat2  = self.sampler(descriptors, kw.get('reliability'), aflow)
         print(feat1.shape, feat2.shape)
 
+        print(torch.any(torch.isnan(feat1)))
+        print(torch.any(torch.isnan(feat2)))
+
+
         labels = torch.arange(len(feat1))
         all_labels = torch.cat([labels, labels])
         all_feat = torch.cat([feat1, feat2])
 
         print(all_labels.shape, all_feat.shape)
-        loss_value =  loss_fn(all_feat, all_labels)
+        loss_value =  self.loss_fn(all_feat, all_labels)
         print(loss_value)
        
         return loss_value
