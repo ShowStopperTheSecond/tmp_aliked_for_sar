@@ -103,7 +103,7 @@ class ALIKED(nn.Module):
                                                 resnet.conv3x3(4, 4), self.gate, resnet.conv3x3(4, 1))
         self.desc_head = SDDH(dim, K, M, gate=self.gate, conv2D=conv2D, mask=mask)
         self.dkd = DKD(radius=2, top_k=top_k, scores_th=scores_th, n_limit=n_limit)
-        self.reliability = ConvBlock(dim, 2, self.gate, self.norm, conv_type=conv_types[0])
+        # self.reliability = ConvBlock(dim, 2, self.gate, self.norm, conv_type=conv_types[0])
         # load pretrained
         if load_pretrained:
             pretrained_path = osp.join(osp.split(__file__)[0], f'../models/{model_name}.pth')
@@ -157,13 +157,13 @@ class ALIKED(nn.Module):
         # ================================== score head
         score_map = torch.sigmoid(self.score_head(x1234))
         feature_map = torch.nn.functional.normalize(x1234, p=2, dim=1)
-        reliability = torch.sigmoid(self.reliability(x1234))
+        # reliability = torch.sigmoid(self.reliability(x1234))
         # Unpads images
         feature_map = padder.unpad(feature_map)
         score_map = padder.unpad(score_map)
-        reliability = padder.unpad(reliability)
+        # reliability = padder.unpad(reliability)
 
-        return feature_map, score_map, reliability
+        return feature_map, score_map
 
     def forward(self, imgs, **kw):
         res = [self.forward_one(img) for img in imgs]
@@ -176,14 +176,14 @@ class ALIKED(nn.Module):
     def forward_one(self, image):
         torch.cuda.synchronize()
         # t0 = time.time() 
-        feature_map, score_map, reliability = self.extract_dense_map(image)
+        feature_map, score_map = self.extract_dense_map(image)
         keypoints, kptscores, scoredispersitys = self.dkd(score_map)
         descriptors, offsets = self.desc_head(feature_map, keypoints)
         torch.cuda.synchronize()
         # t1 = time.time()        
 
         
-        return self.normalize(feature_map, reliability, score_map)
+        return self.normalize(feature_map, score_map)
         # return {'keypoints': keypoints,  # B N 2
         #     'descriptors': descriptors,  # B N D
         #     'reliability': reliability,
