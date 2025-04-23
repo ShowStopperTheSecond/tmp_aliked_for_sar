@@ -57,6 +57,7 @@ class MetricLoss (nn.Module):
     def forward(self, descriptors, aflow, **kw):
         # subsample things
         feat1, feat2  = self.sampler(descriptors, kw.get('reliability'), aflow)
+        print(feat1.shape, feat2.shape)
 
         labels = torch.arange(len(feat1))
         all_labels = torch.cat([labels, labels])
