@@ -485,7 +485,7 @@ class NghSampler3 (nn.Module):
 
         print(f'mask: {mask.shape}, xy2: {xy2.shape}')
         print(feat1.shape, feat2.shape)
-        print(mask[:100])
+        print(mask[:10])
         feat1 = feat1[mask, :]
         feat2 = feat2[mask, :]
 
