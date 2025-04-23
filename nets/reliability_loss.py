@@ -7,6 +7,36 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from nets.ap_loss import APLoss
+from pytorch_metric_learning import losses
+
+
+
+all_losses = {
+    "ConstrastiveLoss": losses.ContrastiveLoss(),
+    "PNPLoss_Ds_2022" :losses.PNPLoss(variant='Ds'),
+    "PNPLoss_Dq_2022" :losses.PNPLoss(variant='Dq'),
+    "PNPLoss_Iu_2022" :losses.PNPLoss(variant='Iu'),
+    "PNPLoss_Ib_2022" :losses.PNPLoss(variant='Ib'),
+    "PNPLoss_O_2022" :losses.PNPLoss(variant='O'),
+    "FastAPLoss_2019": losses.FastAPLoss(),
+    "NTXentLoss": losses.NTXentLoss(),
+    "InstanceLoss_2020": losses.InstanceLoss(),
+    "MultiSimilarityLoss_2019": losses.MultiSimilarityLoss(),
+    "SignalToNoiseRatioContrastiveLoss_2019": losses.SignalToNoiseRatioContrastiveLoss(),
+    "AngularLoss_2017": losses.AngularLoss(),
+    "CircleLoss_2020": losses.CircleLoss(),
+    "GeneralizedLiftedStructureLoss_2017": losses.GeneralizedLiftedStructureLoss(),
+    "IntraPairVarianceLoss_2019": losses.IntraPairVarianceLoss(),
+    "LiftedStructureLoss_2016": losses.LiftedStructureLoss(),
+    "MarginLoss_2017": losses.MarginLoss(),
+         }
+
+
+
+
+
+loss_fn = all_losses["FastAPLoss_2019"].to('cuda')
+
 
 
 class PixelAPLoss (nn.Module):
@@ -35,8 +65,9 @@ class PixelAPLoss (nn.Module):
         n = scores.numel()
         if n == 0: return 0
         scores, gt = scores.view(n,-1), gt.view(n,-1)
-        ap = self.aploss(scores, gt).view(msk.shape)
         print(f'ap: {ap.shape}, gt: {gt.shape}, scores: {scores.shape}')
+        
+        ap = self.aploss(scores, gt).view(msk.shape)
 
         # pixel_loss = self.loss_from_ap(ap, qconf)
         
@@ -59,3 +90,15 @@ class ReliabilityLoss (PixelAPLoss):
 
 
 
+
+
+# all_desc1 = torch.cat([desc1a,desc1b,desc1c])
+# all_desc2 = torch.cat([desc2a,desc2b,desc2c])
+# labels = torch.arange(len(all_desc1))
+
+# all_desc = torch.cat([all_desc1, all_desc2])
+
+# all_labels = torch.cat([labels, labels])
+
+# loss_value =  loss_fn(all_desc, all_labels)
+# loss_value.backward()
