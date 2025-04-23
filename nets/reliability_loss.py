@@ -36,7 +36,7 @@ all_losses = {
 
 
 
-loss_fn = all_losses["FastAPLoss_2019"].to('cuda')
+loss_fn = all_losses["FastAPLoss_2019"]
 
 
 
