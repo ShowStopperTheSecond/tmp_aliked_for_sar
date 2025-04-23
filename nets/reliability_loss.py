@@ -32,6 +32,7 @@ class PixelAPLoss (nn.Module):
         
         # compute pixel-wise AP
         # n = qconf.numel()
+        n = scores.numel()
         if n == 0: return 0
         scores, gt = scores.view(n,-1), gt.view(n,-1)
         ap = self.aploss(scores, gt).view(msk.shape)
