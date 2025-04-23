@@ -36,7 +36,7 @@ all_losses = {
 
 
 
-loss_fn = all_losses["FastAPLoss_2019"]
+# loss_fn = all_losses["FastAPLoss_2019"]
 
 
 
@@ -53,7 +53,7 @@ class MetricLoss (nn.Module):
         # self.aploss = APLoss(nq, min=0, max=1, euc=False)
         self.name = 'Metric Loss'
         self.sampler = sampler
-        self.loss_fn = loss_fn[loss_name]
+        self.loss_fn = all_losses[loss_name]
 
     def forward(self, descriptors, aflow, **kw):
         # subsample things
