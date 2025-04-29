@@ -182,7 +182,7 @@ class ALIKED(nn.Module):
         torch.cuda.synchronize()
         # t1 = time.time()        
 
-        
+        print(len(descriptors))
         return self.normalize(descriptors, None, score_map)
         # return {'keypoints': keypoints,  # B N 2
         #     'descriptors': descriptors,  # B N D
