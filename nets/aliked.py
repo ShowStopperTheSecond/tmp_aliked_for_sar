@@ -181,8 +181,8 @@ class ALIKED(nn.Module):
         descriptors, offsets = self.desc_head(feature_map, keypoints)
         torch.cuda.synchronize()
         # t1 = time.time()        
-
-        print(len(descriptors))
+        descriptors = torch.cat(descriptors, dim=1)
+        print(descriptors.shape)
         return self.normalize(descriptors, None, score_map)
         # return {'keypoints': keypoints,  # B N 2
         #     'descriptors': descriptors,  # B N D
