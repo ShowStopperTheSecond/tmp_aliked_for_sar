@@ -461,7 +461,9 @@ class NghSampler3 (nn.Module):
         assert two == 2
         feat1, conf1 = feats[0], (confs[0] if confs else None)
         feat2, conf2 = feats[1], (confs[1] if confs else None)
-        
+        splitted_feat1 = torch.split(feat1,64,dim=1)
+        splitted_feat2 = torch.split(feat2,64,dim=1)
+
         # positions in the first image
         b1, y1, x1, shape = self.gen_grid(self.sub_q, aflow)
 
@@ -483,41 +485,73 @@ class NghSampler3 (nn.Module):
         # compute positive scores
         xy2p = clamp(xy2[:,None,:] + self.pos_offsets[:,:,None])
         pscores = (feat1[None,:,:] * feat2[b2, :, xy2p[1], xy2p[0]]).sum(dim=-1).t()
+
+        all_pscores = []
+        for f1, f2 in zip(splitted_feat1, splitted_feat2):
+            ps = (f1[None,:,:] * f2[b2, :, xy2p[1], xy2p[0]]).sum(dim=-1).t()
+            all_pscores.append(ps)
+
+
+        
 #        xy1p = clamp(torch.stack((x1,y1))[:,None,:] + self.pos_offsets[:,:,None])
 #        grid = FullSampler._aflow_to_grid(aflow)
 #        feat2p = F.grid_sample(feat2, grid, mode='bilinear', padding_mode='border')
 #        pscores = (feat1[None,:,:] * feat2p[b1,:,xy1p[1], xy1p[0]]).sum(dim=-1).t()
-        if self.maxpool_pos:
-            pscores, pos = pscores.max(dim=1, keepdim=True)
-            if confs: 
-                sel = clamp(xy2 + self.pos_offsets[:,pos.view(-1)])
-                qconf = (qconf + conf2[b2, :, sel[1], sel[0]].view(shape))/2
+        # if self.maxpool_pos:
+        #     pscores, pos = pscores.max(dim=1, keepdim=True)
+        #     if confs: 
+        #         sel = clamp(xy2 + self.pos_offsets[:,pos.view(-1)])
+        #         qconf = (qconf + conf2[b2, :, sel[1], sel[0]].view(shape))/2
         
         # compute negative scores
         xy2n = clamp(xy2[:,None,:] + self.neg_offsets[:,:,None])
         nscores = (feat1[None,:,:] * feat2[b2, :, xy2n[1], xy2n[0]]).sum(dim=-1).t()
+        all_nscores = []
+        for f1, f2 in zip(splitted_feat1, splitted_feat2):
+            ns = (f1[None,:,:] * f2[b2, :, xy2n[1], xy2n[0]]).sum(dim=-1).t()
+            all_nscores.append(ns)
 
         if self.sub_d_neg:
             # add distractors from a grid
             b3, y3, x3, _ = self.gen_grid(self.sub_d_neg, aflow)
             distractors = feat2[b3, :, y3, x3]
             dscores = torch.matmul(feat1, distractors.t())
-            del distractors
+            all_dscores = []
+            for f1, f2 in zip(splitted_feat1, splitted_feat2):
+                dis = f2[b3, :, y3, x3]
+                ds = torch.matmul(f1, ds.t())
+                all_dscores.append(ds)
+            
+            # del distractors
             
             # remove scores that corresponds to positives or nulls
             dis2 = (x3 - xy2[0][:,None])**2 + (y3 - xy2[1][:,None])**2
             dis2 += (b3 != b2[:,None]).long() * self.neg_d**2
             dscores[dis2 < self.neg_d**2] = 0
-            
+
+            for d in all_dscores:
+                d[dis2 < self.neg_d**2] = 0
+
+
+            all_scores = []
+
+            for p, n, d in zip(all_pscores, all_nscores, all_dscores):
+                s = torch.cat((pscores, nscores, dscores), dim=1)
+                all_scores.append(s)
+
             scores = torch.cat((pscores, nscores, dscores), dim=1)
         else:
             # concat everything
+            all_scores = []
+            for p, n, d in zip(all_pscores, all_nscores):
+                s = torch.cat((pscores, nscores), dim=1)
+                all_scores.append(s)
             scores = torch.cat((pscores, nscores), dim=1)
 
         gt = scores.new_zeros(scores.shape, dtype=torch.uint8)
         gt[:, :pscores.shape[1]] = 1
 
-        return scores, gt, mask, qconf
+        return scores, gt, mask, qconf, all_scores
 
 
 
