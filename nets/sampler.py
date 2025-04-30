@@ -461,8 +461,11 @@ class NghSampler3 (nn.Module):
         assert two == 2
         feat1, conf1 = feats[0], (confs[0] if confs else None)
         feat2, conf2 = feats[1], (confs[1] if confs else None)
+        print(feat1.shape)
+
         splitted_feat1 = torch.split(feat1,64,dim=1)
         splitted_feat2 = torch.split(feat2,64,dim=1)
+        print(splitted_feat1[0].shape)
 
         # positions in the first image
         b1, y1, x1, shape = self.gen_grid(self.sub_q, aflow)
