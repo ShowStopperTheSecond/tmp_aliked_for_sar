@@ -111,7 +111,7 @@ class ALIKED(nn.Module):
             if osp.exists(pretrained_path):
                 print(f'loading {pretrained_path}')
                 state_dict = torch.load(pretrained_path, 'cpu')
-                self.load_state_dict(state_dict, strict=True)
+                self.load_state_dict(state_dict, strict=False)
                 self.to(device)
                 self.eval()
             else:
