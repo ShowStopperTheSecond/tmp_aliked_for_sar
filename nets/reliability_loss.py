@@ -28,18 +28,26 @@ class PixelAPLoss (nn.Module):
 
     def forward(self, descriptors, aflow, **kw):
         # subsample things
-        scores, gt, msk, qconf = self.sampler(descriptors, kw.get('reliability'), aflow)
+        scores, gt, msk, qconf, all_scores = self.sampler(descriptors, kw.get('reliability'), aflow)
         
         # compute pixel-wise AP
         n = qconf.numel()
         if n == 0: return 0
-        scores, gt = scores.view(n,-1), gt.view(n,-1)
-        ap = self.aploss(scores, gt).view(msk.shape)
+        gt = gt.view(n,-1)
 
-        pixel_loss = self.loss_from_ap(ap, qconf)
+        all_loss = []
+        for s in all_scores:
+            s = s.view(n,-1)
+
+            ap = self.aploss(s, gt).view(msk.shape)
+
+            pixel_loss = self.loss_from_ap(ap, qconf)
         
-        loss = pixel_loss[msk].mean()
-        return loss
+            loss = pixel_loss[msk].mean()
+            all_loss.append(loss)
+            
+        return loss.mean()
+
 
 
 class ReliabilityLoss (PixelAPLoss):
