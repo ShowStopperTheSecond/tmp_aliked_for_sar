@@ -461,11 +461,8 @@ class NghSampler3 (nn.Module):
         assert two == 2
         feat1, conf1 = feats[0], (confs[0] if confs else None)
         feat2, conf2 = feats[1], (confs[1] if confs else None)
-        print(feat1.shape)
 
-        splitted_feat1 = torch.split(feat1,64,dim=1)
-        splitted_feat2 = torch.split(feat2,64,dim=1)
-        print(splitted_feat1[0].shape)
+
 
         # positions in the first image
         b1, y1, x1, shape = self.gen_grid(self.sub_q, aflow)
@@ -474,6 +471,13 @@ class NghSampler3 (nn.Module):
         feat1 = feat1[b1, :, y1, x1]
         qconf = conf1[b1, :, y1, x1].view(shape) if confs else None
         
+        splitted_feat1 = torch.split(feat1,64,dim=1)
+        splitted_feat2 = torch.split(feat2,64,dim=1)
+        print(feat1.shape, feat2.shape)
+        
+        print(splitted_feat1[0].shape, splitted_feat2[0].shape, )
+
+
         #sample GT from second image
         b2 = b1
         xy2 = (aflow[b1, :, y1, x1] + 0.5).long().t()
