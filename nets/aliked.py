@@ -177,13 +177,13 @@ class ALIKED(nn.Module):
         torch.cuda.synchronize()
         # t0 = time.time() 
         feature_map, score_map, reliability = self.extract_dense_map(image)
-        keypoints, kptscores, scoredispersitys = self.dkd(score_map)
-        descriptors, offsets = self.desc_head(feature_map, keypoints)
+        # keypoints, kptscores, scoredispersitys = self.dkd(score_map)
+        # descriptors, offsets = self.desc_head(feature_map, keypoints)
         torch.cuda.synchronize()
         # t1 = time.time()        
 
         
-        return self.normalize(descriptors, reliability, score_map)
+        return self.normalize(feature_map, reliability, score_map)
         # return {'keypoints': keypoints,  # B N 2
         #     'descriptors': descriptors,  # B N D
         #     'reliability': reliability,
