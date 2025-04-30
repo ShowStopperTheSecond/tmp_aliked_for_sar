@@ -473,9 +473,9 @@ class NghSampler3 (nn.Module):
         
         splitted_feat1 = torch.split(feat1,64,dim=1)
         splitted_feat2 = torch.split(feat2,64,dim=1)
-        print(feat1.shape, feat2.shape)
-        
-        print(splitted_feat1[0].shape, splitted_feat2[0].shape, )
+        # print(feat1.shape, feat2.shape)
+
+        # print(splitted_feat1[0].shape, splitted_feat2[0].shape, )
 
 
         #sample GT from second image
@@ -526,7 +526,7 @@ class NghSampler3 (nn.Module):
             all_dscores = []
             for f1, f2 in zip(splitted_feat1, splitted_feat2):
                 dis = f2[b3, :, y3, x3]
-                ds = torch.matmul(f1, ds.t())
+                ds = torch.matmul(f1, dis.t())
                 all_dscores.append(ds)
             
             # del distractors
