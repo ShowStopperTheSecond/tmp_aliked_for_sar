@@ -735,7 +735,7 @@ class NghSampler4 (nn.Module):
                 all_scores.append(s)
             scores = torch.cat((pscores, nscores), dim=1)
         ret_feat1 = feat1[ret_mask]
-        ret_feat2 = feat2[ret_mask]
+        ret_feat2 = ret_feat2[ret_mask]
         gt = scores.new_zeros(scores.shape, dtype=torch.uint8)
         gt[:, :pscores.shape[1]] = 1
 
