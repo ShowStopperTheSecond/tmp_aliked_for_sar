@@ -662,7 +662,8 @@ class NghSampler4 (nn.Module):
         mask = (0 <= xy2[0]) * (0 <= xy2[1]) * (xy2[0] < W) * (xy2[1] < H)
         ret_mask = mask.view(-1)
         mask = mask.view(shape)
-        
+        xy2p = clamp(xy2)
+        ret_feat2 = feat2[b2, :, xy2p[1], xy2p[0]]
         def clamp(xy):
             torch.clamp(xy[0], 0, W-1, out=xy[0])
             torch.clamp(xy[1], 0, H-1, out=xy[1])
@@ -671,7 +672,7 @@ class NghSampler4 (nn.Module):
         # compute positive scores
         xy2p = clamp(xy2[:,None,:] + self.pos_offsets[:,:,None])
         pscores = (feat1[None,:,:] * feat2[b2, :, xy2p[1], xy2p[0]]).sum(dim=-1).t()
-        ret_feat2 = feat2[b2, :, xy2p[1], xy2p[0]]
+        
         all_pscores = []
         for f1, f2 in zip(splitted_feat1, splitted_feat2):
             ps = (f1[None,:,:] * f2[b2, :, xy2p[1], xy2p[0]]).sum(dim=-1).t()
