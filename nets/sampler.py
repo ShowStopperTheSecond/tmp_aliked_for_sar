@@ -654,7 +654,10 @@ class NghSampler4 (nn.Module):
         # print(feat1.shape, feat2.shape)
 
         # print(splitted_feat1[0].shape, splitted_feat2[0].shape, )
-
+        def clamp(xy):
+            torch.clamp(xy[0], 0, W-1, out=xy[0])
+            torch.clamp(xy[1], 0, H-1, out=xy[1])
+            return xy
 
         #sample GT from second image
         b2 = b1
@@ -664,10 +667,7 @@ class NghSampler4 (nn.Module):
         mask = mask.view(shape)
         xy2p = clamp(xy2)
         ret_feat2 = feat2[b2, :, xy2p[1], xy2p[0]]
-        def clamp(xy):
-            torch.clamp(xy[0], 0, W-1, out=xy[0])
-            torch.clamp(xy[1], 0, H-1, out=xy[1])
-            return xy
+        
         
         # compute positive scores
         xy2p = clamp(xy2[:,None,:] + self.pos_offsets[:,:,None])
