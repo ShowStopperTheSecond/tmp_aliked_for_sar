@@ -8,6 +8,37 @@ import torch.nn.functional as F
 
 from nets.ap_loss import APLoss
 
+import torch
+
+# from nets.ap_loss import APLoss
+from pytorch_metric_learning import losses
+
+
+
+all_losses = {
+    "ConstrastiveLoss": losses.ContrastiveLoss(),
+    "PNPLoss_Ds_2022" :losses.PNPLoss(variant='Ds'),
+    "PNPLoss_Dq_2022" :losses.PNPLoss(variant='Dq'),
+    "PNPLoss_Iu_2022" :losses.PNPLoss(variant='Iu'),
+    "PNPLoss_Ib_2022" :losses.PNPLoss(variant='Ib'),
+    "PNPLoss_O_2022" :losses.PNPLoss(variant='O'),
+    "FastAPLoss_2019": losses.FastAPLoss(),
+    "NTXentLoss": losses.NTXentLoss(),
+    "InstanceLoss_2020": losses.InstanceLoss(),
+    "MultiSimilarityLoss_2019": losses.MultiSimilarityLoss(),
+    "SignalToNoiseRatioContrastiveLoss_2019": losses.SignalToNoiseRatioContrastiveLoss(),
+    "AngularLoss_2017": losses.AngularLoss(),
+    "CircleLoss_2020": losses.CircleLoss(),
+    "GeneralizedLiftedStructureLoss_2017": losses.GeneralizedLiftedStructureLoss(),
+    "IntraPairVarianceLoss_2019": losses.IntraPairVarianceLoss(),
+    "LiftedStructureLoss_2016": losses.LiftedStructureLoss(),
+    "MarginLoss_2017": losses.MarginLoss(),
+         }
+
+
+
+         
+
 
 class PixelAPLoss (nn.Module):
     """ Computes the pixel-wise AP loss:
