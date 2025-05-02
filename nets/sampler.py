@@ -660,6 +660,7 @@ class NghSampler4 (nn.Module):
         b2 = b1
         xy2 = (aflow[b1, :, y1, x1] + 0.5).long().t()
         mask = (0 <= xy2[0]) * (0 <= xy2[1]) * (xy2[0] < W) * (xy2[1] < H)
+        ret_mask = mask.view(-1)
         mask = mask.view(shape)
         
         def clamp(xy):
@@ -732,8 +733,8 @@ class NghSampler4 (nn.Module):
                 s = torch.cat((pscores, nscores), dim=1)
                 all_scores.append(s)
             scores = torch.cat((pscores, nscores), dim=1)
-        ret_feat1 = feat1[mask]
-        ret_feat2 = feat2[mask]
+        ret_feat1 = feat1[ret_mask]
+        ret_feat2 = feat2[ret_mask]
         gt = scores.new_zeros(scores.shape, dtype=torch.uint8)
         gt[:, :pscores.shape[1]] = 1
 
