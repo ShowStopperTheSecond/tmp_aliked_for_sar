@@ -28,7 +28,7 @@ class PixelAPLoss (nn.Module):
 
     def forward(self, descriptors, aflow, **kw):
         # subsample things
-        scores, gt, msk, qconf, all_scores = self.sampler(descriptors, kw.get('reliability'), aflow)
+        scores, gt, msk, qconf, all_scores, _, _ = self.sampler(descriptors, kw.get('reliability'), aflow)
         
         # compute pixel-wise AP
         n = qconf.numel()
@@ -62,6 +62,44 @@ class ReliabilityLoss (PixelAPLoss):
 
     def loss_from_ap(self, ap, rel):
         return 1 - ap*rel - (1-rel)*self.base
+
+
+
+
+class MetricLoss (nn.Module):
+    """ Computes the pixel-wise AP loss:
+        Given two images and ground-truth optical flow, computes the AP per pixel.
+        
+        feat1:  (B, C, H, W)   pixel-wise features extracted from img1
+        feat2:  (B, C, H, W)   pixel-wise features extracted from img2
+        aflow:  (B, 2, H, W)   absolute flow: aflow[...,y1,x1] = x2,y2
+    """
+    def __init__(self, sampler, loss_name):
+        nn.Module.__init__(self)
+        # self.aploss = APLoss(nq, min=0, max=1, euc=False)
+        self.name = 'Metric Loss'
+        self.sampler = sampler
+        self.loss_fn = all_losses[loss_name]
+
+    def forward(self, descriptors, aflow, **kw):
+        # subsample things
+        _,_,_,_,_,feat1, feat2  = self.sampler(descriptors, kw.get('reliability'), aflow)
+        # print(feat1.shape, feat2.shape)
+
+        # print(torch.any(torch.isnan(feat1)))
+        # print(torch.any(torch.isnan(feat2)))
+
+
+        labels = torch.arange(len(feat1))
+        all_labels = torch.cat([labels, labels])
+        all_feat = torch.cat([feat1, feat2])
+
+        # print(all_labels.shape, all_feat.shape)
+        loss_value =  self.loss_fn(all_feat, all_labels)
+        # print(loss_value)
+       
+        return loss_value
+
 
 
 
