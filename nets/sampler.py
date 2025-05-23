@@ -637,8 +637,8 @@ class NghSampler4 (nn.Module):
     def forward(self, feats, confs, aflow, **kw):
         B, two, H, W = aflow.shape
         assert two == 2
-        feat1, conf1 = feats[0], (confs[0] if confs else None)
-        feat2, conf2 = feats[1], (confs[1] if confs else None)
+        feat1, conf1 = feats[0][0], (confs[0] if confs else None)
+        feat2, conf2 = feats[1][0], (confs[1] if confs else None)
 
 
 
