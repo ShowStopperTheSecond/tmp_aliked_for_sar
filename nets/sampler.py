@@ -666,7 +666,7 @@ class NghSampler4 (nn.Module):
         ret_mask = mask.view(-1)
         mask = mask.view(shape)
         xy2p = clamp(xy2)
-        ret_feat2 = [for f[b2, :, xy2p[1], xy2p[0]] in feat2]
+        ret_feat2 = [f[b2, :, xy2p[1], xy2p[0]] for f in feat2]
         
         
         # compute positive scores
@@ -737,8 +737,8 @@ class NghSampler4 (nn.Module):
         # ret_feat1 = feat1[ret_mask]
         # ret_feat2 = ret_feat2[ret_mask]
 
-        ret_feat1 = [for f[ret_mask] in feat1]
-        ret_feat2 = [for f[ret_mask] in ret_feat2]
+        ret_feat1 = [ f[ret_mask] for f in feat1]
+        ret_feat2 = [ f[ret_mask] for f in ret_feat2]
         gt = scores.new_zeros(scores.shape, dtype=torch.uint8)
         gt[:, :pscores.shape[1]] = 1
 
