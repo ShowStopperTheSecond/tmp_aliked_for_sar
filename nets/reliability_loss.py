@@ -121,9 +121,13 @@ class MetricLoss (nn.Module):
         # print(torch.any(torch.isnan(feat2)))
 
 
-        labels = torch.arange(len(feat1))
+        labels = torch.arange(len(feat1) * len(feat1[0]))
         all_labels = torch.cat([labels, labels])
-        all_feat = torch.cat([feat1, feat2])
+        # all_feat = torch.cat([feat1, feat2])
+        feat1.extend(feat2)
+        all_feat = torch.cat(feat1)
+
+
 
         # print(all_labels.shape, all_feat.shape)
         loss_value =  self.loss_fn(all_feat, all_labels)

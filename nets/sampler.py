@@ -857,8 +857,6 @@ class NghSampler5 (nn.Module):
         
         all_pscores = []
         for f1, f2 in zip(splitted_feat1, splitted_feat2):
-            print(f1.shape)
-            print(f2.shape)
             ps = (f1[None,:,:] * f2[b2, :, xy2p[1], xy2p[0]]).sum(dim=-1).t()
             all_pscores.append(ps)
 
