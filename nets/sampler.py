@@ -649,8 +649,8 @@ class NghSampler4 (nn.Module):
         feat1 = feat1[b1, :, y1, x1]
         qconf = conf1[b1, :, y1, x1].view(shape) if confs else None
         
-        splitted_feat1 = torch.split(feat1,64,dim=1)
-        splitted_feat2 = torch.split(feat2,64,dim=1)
+        splitted_feat1 = feat1
+        splitted_feat2 = feat2
         # print(feat1.shape, feat2.shape)
 
         # print(splitted_feat1[0].shape, splitted_feat2[0].shape, )
@@ -666,7 +666,7 @@ class NghSampler4 (nn.Module):
         ret_mask = mask.view(-1)
         mask = mask.view(shape)
         xy2p = clamp(xy2)
-        ret_feat2 = feat2[b2, :, xy2p[1], xy2p[0]]
+        ret_feat2 = [for f[b2, :, xy2p[1], xy2p[0]] in feat2]
         
         
         # compute positive scores
@@ -734,8 +734,11 @@ class NghSampler4 (nn.Module):
                 s = torch.cat((pscores, nscores), dim=1)
                 all_scores.append(s)
             scores = torch.cat((pscores, nscores), dim=1)
-        ret_feat1 = feat1[ret_mask]
-        ret_feat2 = ret_feat2[ret_mask]
+        # ret_feat1 = feat1[ret_mask]
+        # ret_feat2 = ret_feat2[ret_mask]
+
+        ret_feat1 = [for f[ret_mask] in feat1]
+        ret_feat2 = [for f[ret_mask] in ret_feat2]
         gt = scores.new_zeros(scores.shape, dtype=torch.uint8)
         gt[:, :pscores.shape[1]] = 1
 

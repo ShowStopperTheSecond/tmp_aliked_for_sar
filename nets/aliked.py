@@ -55,7 +55,7 @@ class ALIKED(nn.Module):
 
     def __init__(
             self,
-            model_name: str = 'aliked-n32_long_desc',
+            model_name: str = 'aliked-t16',
             device: str = 'cuda',
             top_k: int = -1, # -1 for threshold based mode, >0 for top K mode.
             scores_th: float = 0.2,
@@ -101,9 +101,11 @@ class ALIKED(nn.Module):
         self.upsample32 = nn.Upsample(scale_factor=32, mode='bilinear', align_corners=True)
         self.score_head = nn.Sequential(resnet.conv1x1(dim, 8), self.gate, resnet.conv3x3(8, 4), self.gate,
                                                 resnet.conv3x3(4, 4), self.gate, resnet.conv3x3(4, 1))
-        self.desc_head = SDDH(dim, K, M, gate=self.gate, conv2D=conv2D, mask=mask)
-        self.dkd = DKD(radius=2, top_k=top_k, scores_th=scores_th, n_limit=n_limit)
         self.reliability = ConvBlock(dim, 2, self.gate, self.norm, conv_type=conv_types[0])
+        self.desc1 = nn.Sequential(resnet.conv1x1(dim, dim), self.gate)
+        self.desc2 = nn.Sequential(resnet.conv1x1(dim, dim), self.gate)
+        self.desc3 = nn.Sequential(resnet.conv1x1(dim, dim), self.gate)
+
         # load pretrained
         if load_pretrained:
             pretrained_path = osp.join(osp.split(__file__)[0], f'../models/{model_name}.pth')
@@ -156,14 +158,21 @@ class ALIKED(nn.Module):
         x1234 = torch.cat([x1, x2_up, x3_up, x4_up], dim=1)
         # ================================== score head
         score_map = torch.sigmoid(self.score_head(x1234))
-        feature_map = torch.nn.functional.normalize(x1234, p=2, dim=1)
+        # feature_map = torch.nn.functional.normalize(x1234, p=2, dim=1)
         reliability = torch.sigmoid(self.reliability(x1234))
+        desc1 = torch.nn.functional.normalize(self.desc1(x1234), p=2, dim=1)
+        desc2 = torch.nn.functional.normalize(self.desc2(x1234), p=2, dim=1)
+        desc3 = torch.nn.functional.normalize(self.desc3(x1234), p=2, dim=1)
+    
+
         # Unpads images
-        feature_map = padder.unpad(feature_map)
+        desc1 = padder.unpad(desc1)
+        desc2 = padder.unpad(desc2)
+        desc3 = padder.unpad(desc3)
         score_map = padder.unpad(score_map)
         reliability = padder.unpad(reliability)
 
-        return feature_map, score_map, reliability
+        return [desc1, desc2, desc3], score_map, reliability
 
     def forward(self, imgs, **kw):
         res = [self.forward_one(img) for img in imgs]
