@@ -128,7 +128,7 @@ class ALIKED(nn.Module):
 
 
     def normalize(self, x, ureliability, urepeatability):
-        return dict(descriptors = F.normalize(x, p=2, dim=1),
+        return dict(descriptors = [F.normalize(xxx, p=2, dim=1) for xxx in x],
                     repeatability = self.softmax( urepeatability ),
                     reliability = self.softmax( ureliability ))
      
