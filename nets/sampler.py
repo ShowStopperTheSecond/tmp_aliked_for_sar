@@ -822,9 +822,6 @@ class NghSampler5 (nn.Module):
         feat1, conf1 = feats[0][0], (confs[0] if confs else None)
         feat2, conf2 = feats[1][0], (confs[1] if confs else None)
 
-        print(len(feat1), feat1.shape)
-        print(len(feat2), feat2.shape)
-
 
 
         # positions in the first image
@@ -924,7 +921,7 @@ class NghSampler5 (nn.Module):
         # ret_feat1 = feat1[ret_mask]
         # ret_feat2 = ret_feat2[ret_mask]
 
-        ret_feat1 = [ f[ret_mask] for f in feats[0]]
+        ret_feat1 = [ f[b1, :, y1, x1][ret_mask] for f in feats[0]]
         ret_feat2 = [ f[ret_mask] for f in ret_feat2]
         gt = scores.new_zeros(scores.shape, dtype=torch.uint8)
         gt[:, :pscores.shape[1]] = 1
