@@ -101,7 +101,6 @@ class ALIKED(nn.Module):
         self.upsample32 = nn.Upsample(scale_factor=32, mode='bilinear', align_corners=True)
         self.score_head = nn.Sequential(resnet.conv1x1(dim, 8), self.gate, resnet.conv3x3(8, 4), self.gate,
                                                 resnet.conv3x3(4, 4), self.gate, resnet.conv3x3(4, 1))
-        self.reliability = ConvBlock(dim, 2, self.gate, self.norm, conv_type=conv_types[0])
         self.desc1 = nn.Sequential(resnet.conv1x1(dim, dim), self.gate)
         self.desc2 = nn.Sequential(resnet.conv1x1(dim, dim), self.gate)
         self.desc3 = nn.Sequential(resnet.conv1x1(dim, dim), self.gate)
@@ -130,7 +129,7 @@ class ALIKED(nn.Module):
     def normalize(self, x, ureliability, urepeatability):
         return dict(descriptors = [F.normalize(xxx, p=2, dim=1) for xxx in x],
                     repeatability = self.softmax( urepeatability ),
-                    reliability = self.softmax( ureliability ))
+                    reliability = None)
      
     
     def extract_dense_map(self, image):
@@ -192,33 +191,5 @@ class ALIKED(nn.Module):
         # t1 = time.time()        
 
         
-        return self.normalize(feature_map, reliability, score_map)
-        # return {'keypoints': keypoints,  # B N 2
-        #     'descriptors': descriptors,  # B N D
-        #     'reliability': reliability,
-        #     'scores': kptscores,  # B N
-        #     'score_dispersity': scoredispersitys,
-        #     'score_map': score_map,  # Bx1xHxW
-        #     'time': t1-t0,
-
-        # }
-    
-    # def run(self, img_rgb):
-    #     img_tensor = ToTensor()(img_rgb)
-    #     img_tensor = img_tensor.to(self.device).unsqueeze_(0)
-        
-        
-    #     with torch.no_grad():
-    #         pred = self.forward(img_tensor)
-            
-    #     kpts = pred['keypoints'][0]
-    #     _, _, h, w = img_tensor.shape
-    #     wh = torch.tensor([w - 1, h - 1],device=kpts.device)
-    #     kpts = wh*(kpts+1)/2
-    #     return {'keypoints': kpts.cpu().numpy(),  # N 2
-    #         'descriptors': pred['descriptors'][0].cpu().numpy(),  # N D
-    #         'reliability': pred['reliability'][0].cpu().numpy(),
-    #         'scores': pred['scores'][0].cpu().numpy(),  # B N D
-    #         'score_map': pred['score_map'][0,0].cpu().numpy(),  # Bx1xHxW
-    #         'time': pred['time'],
-    #     }
+        return self.normalize(feature_map, None, score_map)
+       
