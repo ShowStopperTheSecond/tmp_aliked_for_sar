@@ -23,7 +23,7 @@ ALIKED_CFGS = {'aliked-t16':{'c1': 8,
                              'c2': 32,
                              'c3': 64,
                              'c4': 128,
-                             'dim': 128,
+                             'dim': 128,s
                              'K': 3,
                              'M': 16},
                'aliked-n16rot':{'c1': 16,
@@ -129,7 +129,7 @@ class ALIKED(nn.Module):
     def normalize(self, x, ureliability, urepeatability):
         return dict(descriptors = [F.normalize(xxx, p=2, dim=1) for xxx in x],
                     repeatability = self.softmax( urepeatability ),
-                    reliability = None)
+                    reliability = self.softmax( urepeatability ))
      
     
     def extract_dense_map(self, image):
@@ -191,7 +191,7 @@ class ALIKED(nn.Module):
         # t1 = time.time()        
 
         
-        return self.normalize(feature_map, None, score_map)
+        return self.normalize(feature_map, score_map, score_map)
         # return {'keypoints': keypoints,  # B N 2
         #     'descriptors': descriptors,  # B N D
         #     'reliability': reliability,
