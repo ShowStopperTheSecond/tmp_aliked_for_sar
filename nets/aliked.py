@@ -158,7 +158,7 @@ class ALIKED(nn.Module):
         # ================================== score head
         score_map = torch.sigmoid(self.score_head(x1234))
         # feature_map = torch.nn.functional.normalize(x1234, p=2, dim=1)
-        reliability = torch.sigmoid(self.reliability(x1234))
+        
         desc1 = torch.nn.functional.normalize(self.desc1(x1234), p=2, dim=1)
         desc2 = torch.nn.functional.normalize(self.desc2(x1234), p=2, dim=1)
         desc3 = torch.nn.functional.normalize(self.desc3(x1234), p=2, dim=1)
@@ -169,9 +169,9 @@ class ALIKED(nn.Module):
         desc2 = padder.unpad(desc2)
         desc3 = padder.unpad(desc3)
         score_map = padder.unpad(score_map)
-        reliability = padder.unpad(reliability)
+       
 
-        return [desc1, desc2, desc3], score_map, reliability
+        return [desc1, desc2, desc3], score_map, None
 
     def forward(self, imgs, **kw):
         res = [self.forward_one(img) for img in imgs]
@@ -184,7 +184,7 @@ class ALIKED(nn.Module):
     def forward_one(self, image):
         torch.cuda.synchronize()
         # t0 = time.time() 
-        feature_map, score_map, reliability = self.extract_dense_map(image)
+        feature_map, score_map, _ = self.extract_dense_map(image)
         # keypoints, kptscores, scoredispersitys = self.dkd(score_map)
         # descriptors, offsets = self.desc_head(feature_map, keypoints)
         torch.cuda.synchronize()
@@ -192,4 +192,32 @@ class ALIKED(nn.Module):
 
         
         return self.normalize(feature_map, None, score_map)
-       
+        # return {'keypoints': keypoints,  # B N 2
+        #     'descriptors': descriptors,  # B N D
+        #     'reliability': reliability,
+        #     'scores': kptscores,  # B N
+        #     'score_dispersity': scoredispersitys,
+        #     'score_map': score_map,  # Bx1xHxW
+        #     'time': t1-t0,
+
+        # }
+    
+    # def run(self, img_rgb):
+    #     img_tensor = ToTensor()(img_rgb)
+    #     img_tensor = img_tensor.to(self.device).unsqueeze_(0)
+        
+        
+    #     with torch.no_grad():
+    #         pred = self.forward(img_tensor)
+            
+    #     kpts = pred['keypoints'][0]
+    #     _, _, h, w = img_tensor.shape
+    #     wh = torch.tensor([w - 1, h - 1],device=kpts.device)
+    #     kpts = wh*(kpts+1)/2
+    #     return {'keypoints': kpts.cpu().numpy(),  # N 2
+    #         'descriptors': pred['descriptors'][0].cpu().numpy(),  # N D
+    #         'reliability': pred['reliability'][0].cpu().numpy(),
+    #         'scores': pred['scores'][0].cpu().numpy(),  # B N D
+    #         'score_map': pred['score_map'][0,0].cpu().numpy(),  # Bx1xHxW
+    #         'time': pred['time'],
+    #     }
