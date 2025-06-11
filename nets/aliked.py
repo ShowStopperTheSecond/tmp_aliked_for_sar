@@ -23,7 +23,7 @@ ALIKED_CFGS = {'aliked-t16':{'c1': 8,
                              'c2': 32,
                              'c3': 64,
                              'c4': 128,
-                             'dim': 128,s
+                             'dim': 128,
                              'K': 3,
                              'M': 16},
                'aliked-n16rot':{'c1': 16,
