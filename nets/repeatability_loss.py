@@ -277,11 +277,14 @@ class SharpenPeak2 (nn.Module):
         sali1, sali2 = repeatability
         grid = FullSampler._aflow_to_grid(aflow)
         sali2 = F.grid_sample(sali2, grid, mode='bilinear', padding_mode='border')
-        print(sali1.shape)
-        print(sali2.shape)
-        print(grid.shape, grid)
         patches1 = self.extract_patches(sali1)
         patches2 = self.extract_patches(sali2)
-        cosim = (patches1 * patches2).sum(dim=2)
-        print(patches2.shape)
-        return 1 - cosim.mean()
+        soft_patches1 = F.softmax(patches1)
+        labels1 =  torch.zeros_like(soft_patches1)
+        locs1 = torch.argmax(-1)
+        labels1[:, torch.arange(locs.shape[1]), locs[0, :]]=1
+        soft_patches2 = F.softmax(patches2)
+        labels2 =  torch.zeros_like(soft_patches2)
+        labels2[:, torch.arange(locs.shape[1]), locs[0, :]]=1
+        return F.cross_entropy(soft_patches1, labels1) + F.cross_entropy(soft_patches2,labels2)
+
