@@ -217,40 +217,69 @@ class PeakyLoss (nn.Module):
 
 
 
-class SharpenPeak2(nn.Module):
-    """ Try to make the repeatability repeatable from one image to the other.
-    """
+# class SharpenPeak2(nn.Module):
+#     """ Try to make the repeatability repeatable from one image to the other.
+#     """
 
-    def __init__(self, N=17):
-        nn.Module.__init__(self)
-        self.name = 'SharpenPeak'
-        self.mode = 'bilinear'
-        self.padding = 'zeros'
-        self.ksize= N
-        self.max_filter = torch.nn.MaxPool2d(kernel_size=N, stride=1, padding=N // 2)
-        self.rep_thr = 0
+#     def __init__(self, N=17):
+#         nn.Module.__init__(self)
+#         self.name = 'SharpenPeak'
+#         self.mode = 'bilinear'
+#         self.padding = 'zeros'
+#         self.ksize= N
+#         self.max_filter = torch.nn.MaxPool2d(kernel_size=N, stride=1, padding=N // 2)
+#         self.rep_thr = 0
 
 
-    def nms(self, repeatability, **kw):
-        # assert len(reliability) == len(repeatability) == 1
-        # reliability, repeatability = reliability[0], repeatability[0]
-        # local maxima
-        maxima = (repeatability == self.max_filter(repeatability))
+#     def nms(self, repeatability, **kw):
+#         # assert len(reliability) == len(repeatability) == 1
+#         # reliability, repeatability = reliability[0], repeatability[0]
+#         # local maxima
+#         maxima = (repeatability == self.max_filter(repeatability))
 
-        # remove low peaks
-        maxima *= (repeatability >= self.rep_thr)
+#         # remove low peaks
+#         maxima *= (repeatability >= self.rep_thr)
 
-        return maxima
+#         return maxima
   
 
+#     def forward(self, repeatability, aflow, **kw):
+#         B, two, H, W = aflow.shape
+#         assert two == 2
+
+#         # normalize
+#         sali1, sali2 = repeatability
+#         locsMaxima1 = self.nms(sali1).float()
+#         locsMaxima2 = self.nms(sali2).float()
+#         # m1 = (locsMaxima1 -sali1)**2
+#         # m2 = (locsMaxima2-sali1)**2
+#         return  F.cross_entropy(sali1, locsMaxima1) + F.cross_entropy(sali2, locsMaxima2)
+
+
+class SharpenPeak2 (nn.Module):
+    """ Try to make the repeatability repeatable from one image to the other.
+    """
+    def __init__(self, N=16):
+        nn.Module.__init__(self)
+        self.name = f'cosim{N}'
+        self.patches = nn.Unfold(N, padding=0, stride=N//2)
+
+    def extract_patches(self, sal):
+        patches = self.patches(sal).transpose(1,2) # flatten
+        patches = F.normalize(patches, p=2, dim=2) # norm
+        return patches
+        
     def forward(self, repeatability, aflow, **kw):
-        B, two, H, W = aflow.shape
+        B,two,H,W = aflow.shape
         assert two == 2
 
         # normalize
         sali1, sali2 = repeatability
-        locsMaxima1 = self.nms(sali1).float()
-        locsMaxima2 = self.nms(sali2).float()
-        # m1 = (locsMaxima1 -sali1)**2
-        # m2 = (locsMaxima2-sali1)**2
-        return  F.cross_entropy(sali1, locsMaxima1) + F.cross_entropy(sali2, locsMaxima2)
+        grid = FullSampler._aflow_to_grid(aflow)
+        sali2 = F.grid_sample(sali2, grid, mode='bilinear', padding_mode='border')
+
+        patches1 = self.extract_patches(sali1)
+        patches2 = self.extract_patches(sali2)
+        cosim = (patches1 * patches2).sum(dim=2)
+        print(patches2.shape)
+        return 1 - cosim.mean()
