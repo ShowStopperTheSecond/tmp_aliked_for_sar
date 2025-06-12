@@ -353,7 +353,7 @@ class SharpenPeak3(nn.Module):
 
 
 
-class SharpenPeak3(nn.Module):
+class SharpenPeak4(nn.Module):
     """ Try to make the repeatability repeatable from one image to the other.
     """
 
