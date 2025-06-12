@@ -73,7 +73,7 @@ class CosimLoss (nn.Module):
         patches2 = self.extract_patches(sali2)
         cosim = (patches1 * patches2).sum(dim=2)
 
-        if cosim.mean() >0.09: StartSherpening=True
+        if cosim.mean() >0.99: StartSherpening=True
         return 1 - cosim.mean()
 
 
