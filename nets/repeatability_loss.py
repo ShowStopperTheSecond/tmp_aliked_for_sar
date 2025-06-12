@@ -217,3 +217,30 @@ class PeakyLoss (nn.Module):
 
 
 
+class SharpenPeak2(nn.Module):
+    """ Try to make the repeatability repeatable from one image to the other.
+    """
+
+    def __init__(self, N=17):
+        nn.Module.__init__(self)
+        self.name = 'SharpenPeak'
+        self.mode = 'bilinear'
+        self.padding = 'zeros'
+        self.ksize= N
+        self.max_filter = torch.nn.MaxPool2d(kernel_size=N, stride=1, padding=N // 2)
+        self.rep_thr = 0
+
+
+  
+
+    def forward(self, repeatability, aflow, **kw):
+        B, two, H, W = aflow.shape
+        assert two == 2
+
+        # normalize
+        sali1, sali2 = repeatability
+        locsMaxima1 = self.nms(sali1).float()
+        locsMaxima2 = self.nms(sali2).float()
+        m1 = (locsMaxima1 - sali1)**2
+        m2 = (locsMaxima2-sali1)**2
+        return  F.softmax(m1.flatten()) + F.softmax(m2.flatten())
