@@ -251,6 +251,6 @@ class SharpenPeak2(nn.Module):
         sali1, sali2 = repeatability
         locsMaxima1 = self.nms(sali1).float()
         locsMaxima2 = self.nms(sali2).float()
-        m1 = (locsMaxima1 -sali1)**2
-        m2 = (locsMaxima2-sali1)**2
-        return  torch.mean(F.softmax(m1.flatten()) + F.softmax(m2.flatten()))
+        # m1 = (locsMaxima1 -sali1)**2
+        # m2 = (locsMaxima2-sali1)**2
+        return  F.cross_entropy(sali1, locsMaxima1) + F.cross_entropy(sali2, locsMaxima2)
