@@ -261,7 +261,7 @@ class SharpenPeak2 (nn.Module):
     """
     def __init__(self, N=16):
         nn.Module.__init__(self)
-        self.name = f'cosim{N}'
+        self.name = f'sharpen_peak{N}'
         self.patches = nn.Unfold(N, padding=0, stride=N//2)
 
     def extract_patches(self, sal):
@@ -280,15 +280,15 @@ class SharpenPeak2 (nn.Module):
         patches1 = self.extract_patches(sali1)
         patches2 = self.extract_patches(sali2)
 
-        soft_patches1 = F.softmax(patches1)
+        soft_patches1 = F.softmax(patches1, -1)
         labels1 =  torch.zeros_like(soft_patches1)
         locs = soft_patches1.argmax(-1)
         labels1[:, torch.arange(locs.shape[1]), locs[0, :]]=1
 
-        soft_patches2 = F.softmax(patches2)
+        soft_patches2 = F.softmax(patches2, -1)
         locs = soft_patches2.argmax(-1)
         labels2 =  torch.zeros_like(soft_patches2)
         labels2[:, torch.arange(locs.shape[1]), locs[0, :]]=1
-        
+
         return F.cross_entropy(soft_patches1, labels1) + F.cross_entropy(soft_patches2,labels2)
 
