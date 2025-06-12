@@ -348,8 +348,99 @@ class SharpenPeak3(nn.Module):
         locsMaxima2 = self.soft_nms(sali2).float()
 
         loss_value = torch.mean((locsMaxima1 - sali1)**2 + (locsMaxima2-sali2)**2 )
-        # if StartSherpening:
-        #     return loss_value
-        # else:
-        #     return 0
         return loss_value
+
+
+
+
+class SharpenPeak3(nn.Module):
+    """ Try to make the repeatability repeatable from one image to the other.
+    """
+
+    def __init__(self, N=17):
+        nn.Module.__init__(self)
+        self.name = 'SharpenPeak'
+        self.mode = 'bilinear'
+        self.padding = 'zeros'
+        self.ksize= N
+        self.max_filter = torch.nn.MaxPool2d(kernel_size=N, stride=1, padding=N // 2)
+        self.rep_thr = 0
+        self.soft_nms_alpha = 4
+
+
+    def nms(self, repeatability, **kw):
+        # assert len(reliability) == len(repeatability) == 1
+        # reliability, repeatability = reliability[0], repeatability[0]
+        # local maxima
+        maxima = (repeatability == self.max_filter(repeatability))
+
+        # remove low peaks
+        # maxima = (repeatability >= self.rep_thr)
+
+        return maxima
+
+    def soft_nms(self, repeatability, **kw):
+        maxima_values = self.max_filter(repeatability)
+     
+      
+        soft_scores = torch.sigmoid((repeatability - maxima_values) * self.soft_nms_alpha)
+
+        soft_scores = soft_scores * (repeatability >= self.rep_thr) # Still apply threshold for low peaks
+        return soft_scores
+
+    def forward(self, repeatability, aflow, **kw):
+        B, two, H, W = aflow.shape
+        assert two == 2
+
+        sali1, sali2 = repeatability
+        
+        # Get hard NMS masks for each saliency map
+        hard_maxima1 = self.nms(sali1) # This is boolean
+        hard_maxima2 = self.nms(sali2)
+
+        # --- Loss for Saliency Map 1 ---
+        # 1. Peak Value Loss: Encourage identified peaks to be high (close to 1)
+        # Only compute loss for true maxima
+        peak_value_loss1 = (1.0 - sali1[hard_maxima1])**2
+        
+        # Handle cases where there are no maxima to avoid NaN loss
+        if peak_value_loss1.numel() > 0:
+            peak_value_loss1 = torch.mean(peak_value_loss1)
+        else:
+            peak_value_loss1 = torch.tensor(0.0, device=sali1.device)
+
+
+        # 2. Suppression Loss: Encourage non-peaks to be low (close to 0)
+        # Only compute loss for non-maxima
+        non_maxima1 = ~hard_maxima1
+        suppression_loss1 = sali1[non_maxima1]**2
+        if suppression_loss1.numel() > 0:
+            suppression_loss1 = torch.mean(suppression_loss1)
+        else:
+            suppression_loss1 = torch.tensor(0.0, device=sali1.device)
+
+
+        # --- Loss for Saliency Map 2 (symmetric to saliency map 1) ---
+        peak_value_loss2 = (1.0 - sali2[hard_maxima2])**2
+        if peak_value_loss2.numel() > 0:
+            peak_value_loss2 = torch.mean(peak_value_loss2)
+        else:
+            peak_value_loss2 = torch.tensor(0.0, device=sali2.device)
+
+        non_maxima2 = ~hard_maxima2
+        suppression_loss2 = sali2[non_maxima2]**2
+        if suppression_loss2.numel() > 0:
+            suppression_loss2 = torch.mean(suppression_loss2)
+        else:
+            suppression_loss2 = torch.tensor(0.0, device=sali2.device)
+
+
+        # Combine losses
+        # You'll need to tune these weights!
+        w_peak = 1.0 # Weight for peak value
+        w_suppress = 10.0 # Weight for suppression (often higher due to more non-peak pixels)
+
+        total_loss = (w_peak * (peak_value_loss1 + peak_value_loss2) +
+                      w_suppress * (suppression_loss1 + suppression_loss2)) / 2.0 # Average over 2 maps
+
+        return total_loss
