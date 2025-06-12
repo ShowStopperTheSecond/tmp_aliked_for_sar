@@ -344,8 +344,8 @@ class SharpenPeak3(nn.Module):
 
         # normalize
         sali1, sali2 = repeatability
-        locsMaxima1 = self.nms(sali1).float()
-        locsMaxima2 = self.nms(sali2).float()
+        locsMaxima1 = self.soft_nms(sali1).float()
+        locsMaxima2 = self.soft_nms(sali2).float()
 
         loss_value = torch.mean((locsMaxima1 - sali1)**2 + (locsMaxima2-sali2)**2 )
         # if StartSherpening:
