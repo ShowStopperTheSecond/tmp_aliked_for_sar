@@ -338,7 +338,8 @@ class SharpenPeak3(nn.Module):
         locsMaxima2 = self.nms(sali2).float()
 
         loss_value = torch.mean((locsMaxima1 - sali1)**2 + (locsMaxima2-sali1)**2 )
-        if StartSherpening:
-            return loss_value
-        else:
-            return 0
+        # if StartSherpening:
+        #     return loss_value
+        # else:
+        #     return 0
+        return loss_value
