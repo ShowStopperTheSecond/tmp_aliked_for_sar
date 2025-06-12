@@ -231,6 +231,16 @@ class SharpenPeak2(nn.Module):
         self.rep_thr = 0
 
 
+    def nms(self, repeatability, **kw):
+        # assert len(reliability) == len(repeatability) == 1
+        # reliability, repeatability = reliability[0], repeatability[0]
+        # local maxima
+        maxima = (repeatability == self.max_filter(repeatability))
+
+        # remove low peaks
+        maxima *= (repeatability >= self.rep_thr)
+
+        return maxima
   
 
     def forward(self, repeatability, aflow, **kw):
