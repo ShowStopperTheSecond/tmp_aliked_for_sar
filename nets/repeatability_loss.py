@@ -315,6 +315,7 @@ class SharpenPeak3(nn.Module):
         self.ksize= N
         self.max_filter = torch.nn.MaxPool2d(kernel_size=N, stride=1, padding=N // 2)
         self.rep_thr = 0
+        self.soft_nms_alpha = 4
 
 
     def nms(self, repeatability, **kw):
@@ -327,6 +328,15 @@ class SharpenPeak3(nn.Module):
         # maxima = (repeatability >= self.rep_thr)
 
         return maxima
+
+    def soft_nms(self, repeatability, **kw):
+        maxima_values = self.max_filter(repeatability)
+     
+      
+        soft_scores = torch.sigmoid((repeatability - maxima_values) * self.soft_nms_alpha)
+
+        soft_scores = soft_scores * (repeatability >= self.rep_thr) # Still apply threshold for low peaks
+        return soft_scores
 
     def forward(self, repeatability, aflow, **kw):
         B, two, H, W = aflow.shape
