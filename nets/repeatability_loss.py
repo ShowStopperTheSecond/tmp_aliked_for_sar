@@ -279,12 +279,16 @@ class SharpenPeak2 (nn.Module):
         sali2 = F.grid_sample(sali2, grid, mode='bilinear', padding_mode='border')
         patches1 = self.extract_patches(sali1)
         patches2 = self.extract_patches(sali2)
+
         soft_patches1 = F.softmax(patches1)
         labels1 =  torch.zeros_like(soft_patches1)
-        locs1 = torch.argmax(-1)
+        locs = soft_patches1.argmax(-1)
         labels1[:, torch.arange(locs.shape[1]), locs[0, :]]=1
+
         soft_patches2 = F.softmax(patches2)
+        locs = soft_patches2.argmax(-1)
         labels2 =  torch.zeros_like(soft_patches2)
         labels2[:, torch.arange(locs.shape[1]), locs[0, :]]=1
+        
         return F.cross_entropy(soft_patches1, labels1) + F.cross_entropy(soft_patches2,labels2)
 
