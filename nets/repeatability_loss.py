@@ -290,5 +290,6 @@ class SharpenPeak2 (nn.Module):
         labels2 =  torch.zeros_like(soft_patches2)
         labels2[:, torch.arange(locs.shape[1]), locs[0, :]]=1
 
-        return F.cross_entropy(soft_patches1, labels1) + F.cross_entropy(soft_patches2,labels2)
+        # return F.cross_entropy(soft_patches1, labels1) + F.cross_entropy(soft_patches2,labels2)
 
+        return torch.mean((labels1 - soft_patches1)**2 + (labels2-soft_patches2)**2 )
