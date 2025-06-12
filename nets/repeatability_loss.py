@@ -44,6 +44,9 @@ template
 # matplotlib.use("TkAgg")
 # matplotlib.use("nbAgg")
 
+
+StartSherpening = False
+
 class CosimLoss (nn.Module):
     """ Try to make the repeatability repeatable from one image to the other.
     """
@@ -69,6 +72,8 @@ class CosimLoss (nn.Module):
         patches1 = self.extract_patches(sali1)
         patches2 = self.extract_patches(sali2)
         cosim = (patches1 * patches2).sum(dim=2)
+
+        if cosim.mean() >0.09: StartSherpening=True
         return 1 - cosim.mean()
 
 
@@ -293,3 +298,47 @@ class SharpenPeak2 (nn.Module):
         return F.cross_entropy(soft_patches1, labels1) + F.cross_entropy(soft_patches2,labels2)
 
         # return torch.mean((labels1 - soft_patches1)**2 + (labels2-soft_patches2)**2 )
+
+
+
+
+
+class SharpenPeak3(nn.Module):
+    """ Try to make the repeatability repeatable from one image to the other.
+    """
+
+    def __init__(self, N=17):
+        nn.Module.__init__(self)
+        self.name = 'SharpenPeak'
+        self.mode = 'bilinear'
+        self.padding = 'zeros'
+        self.ksize= N
+        self.max_filter = torch.nn.MaxPool2d(kernel_size=N, stride=1, padding=N // 2)
+        self.rep_thr = 0
+
+
+    def nms(self, repeatability, **kw):
+        # assert len(reliability) == len(repeatability) == 1
+        # reliability, repeatability = reliability[0], repeatability[0]
+        # local maxima
+        maxima = (repeatability == self.max_filter(repeatability))
+
+        # remove low peaks
+        # maxima = (repeatability >= self.rep_thr)
+
+        return maxima
+
+    def forward(self, repeatability, aflow, **kw):
+        B, two, H, W = aflow.shape
+        assert two == 2
+
+        # normalize
+        sali1, sali2 = repeatability
+        locsMaxima1 = self.nms(sali1).float()
+        locsMaxima2 = self.nms(sali2).float()
+
+        loss_value = torch.mean((locsMaxima1 - sali1)**2 + (locsMaxima2-sali1)**2 )
+        if StartSherpening:
+            return loss_value
+        else:
+            return 0
